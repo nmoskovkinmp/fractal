@@ -2422,6 +2422,91 @@ class JsonApiSerializerTest extends TestCase
         ];
     }
 
+
+    public function testSerializePrimitive()
+    {
+        $this->manager->parseIncludes('readers_count');
+
+        $bookData = [
+            'id' => 1,
+            'title' => 'Foo',
+            'year' => '1991',
+        ];
+
+        $resource = new Item($bookData, new JsonApiBookTransformer(), 'books');
+
+        $scope = new Scope($this->manager, $resource);
+
+
+        $expected = [
+            'data' => [
+                'type' => 'books',
+                'id' => '1',
+                'attributes' => [
+                    'title' => 'Foo',
+                    'year' => 1991,
+                    'readers_count' => 45
+                ],
+            ]
+        ];
+
+        $this->assertSame($expected, $scope->toArray());
+    }
+
+    public function testSerializePrimitiveAndItem()
+    {
+        $this->manager->parseIncludes('readers_count,author');
+
+        $bookData = [
+            'id' => 1,
+            'title' => 'Foo',
+            'year' => '1991',
+            '_author' => [
+                'id' => 1,
+                'name' => 'David'
+            ]
+
+        ];
+
+        $resource = new Item($bookData, new JsonApiBookTransformer(), 'books');
+
+        $scope = new Scope($this->manager, $resource);
+
+
+        $expected = [
+            'data' => [
+                'type' => 'books',
+                'id' => '1',
+                'attributes' => [
+                    'title' => 'Foo',
+                    'year' => 1991,
+                    'readers_count' => 45
+                ],
+                'relationships' => [
+                    'author' => [
+                        'data' => [
+                            'type' => 'people',
+                            'id' => '1'
+                        ]
+                    ]
+                ]
+            ],
+            'included' => [
+                [
+                    'type' => 'people',
+                    'id' => '1',
+                    'attributes' => [
+                        'name' => 'David'
+                    ]
+                ]
+            ]
+        ];
+
+        $this->assertSame($expected, $scope->toArray());
+
+        // Needs to be done
+    }
+
     public function tearDown()
     {
         Mockery::close();

@@ -31,6 +31,23 @@ class JsonApiSerializer extends ArraySerializer
         $this->rootObjects = [];
     }
 
+    public function mergeIncludes($transformedData, $includedData)
+    {
+        // If the serializer does not want the includes to be side-loaded then
+        // the included data must be merged with the transformed data.
+        if (! $this->sideloadIncludes()) {
+            return array_merge($transformedData, $includedData);
+        }
+
+        foreach ($includedData as $key => $value) {
+            if ($this->isPrimitive($value)) {
+                $transformedData[$key] = $value;
+            }
+        }
+
+        return $transformedData;
+    }
+
     /**
      * Serialize a collection.
      *
@@ -183,6 +200,9 @@ class JsonApiSerializer extends ArraySerializer
 
         foreach ($data as $value) {
             foreach ($value as $includeObject) {
+                if ($this->isPrimitive($includeObject)) {
+                    continue;
+                }
                 if ($this->isNull($includeObject) || $this->isEmpty($includeObject)) {
                     continue;
                 }
@@ -330,6 +350,11 @@ class JsonApiSerializer extends ArraySerializer
         return array_key_exists('data', $data) && $data['data'] === [];
     }
 
+    protected function isPrimitive($data)
+    {
+        return !is_array($data) || !array_key_exists('data', $data);
+    }
+
     /**
      * @param array $data
      * @param array $relationships
@@ -362,6 +387,9 @@ class JsonApiSerializer extends ArraySerializer
 
         foreach ($includedData as $key => $inclusion) {
             foreach ($inclusion as $includeKey => $includeObject) {
+                if ($this->isPrimitive($includeObject)) {
+                    continue;
+                }
                 $relationships = $this->buildRelationships($includeKey, $relationships, $includeObject, $key);
                 if (isset($includedData[0][$includeKey]['meta'])) {
                     $relationships[$includeKey][0]['meta'] = $includedData[0][$includeKey]['meta'];

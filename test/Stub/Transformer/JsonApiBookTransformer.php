@@ -8,6 +8,7 @@ class JsonApiBookTransformer extends TransformerAbstract
         'author',
         'co-author',
         'author-with-meta',
+        'readers_count'
     ];
 
     public function transform(array $book)
@@ -57,5 +58,10 @@ class JsonApiBookTransformer extends TransformerAbstract
         }
 
         return $this->item($book['_co_author'], new JsonApiAuthorTransformer(), 'people');
+    }
+
+    public function includeReadersCount(array $book)
+    {
+        return $this->primitive(45);
     }
 }
